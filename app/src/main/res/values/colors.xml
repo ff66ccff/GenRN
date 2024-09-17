@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="purple_200">#FFBB86FC</color>
+    <color name="purple_500">#FF6200EE</color>
+    <color name="purple_700">#FF3700B3</color>
+    <color name="teal_200">#FF03DAC5</color>
+    <color name="teal_700">#FF018786</color>
+    <color name="black">#FF000000</color>
+    <color name="white">#FFFFFFFF</color>
+    <color name="amber">#FEBA07</color>
+    <color name="default_color">#1772B4</color>
+    <color name="selected_item_color">#FEBA07</color>
+
+    <!-- Default colors -->
+    <color name="background_color">#F9F4DC</color>
+    <color name="title_color">#1772B4</color>
+    <color name="button_color">#E16723</color>
+
+    <!-- Theme colors -->
+    <color name="colorPrimary">@color/title_color</color>
+    <color name="colorPrimaryDark">@color/title_color</color>
+    <color name="colorAccent">@color/button_color</color>
+
+    <!-- New colors for themes.xml -->
+    <color name="primary">#6200EE</color>
+    <color name="primary_variant">#3700B3</color>
+    <color name="on_primary">#FFFFFF</color>
+    <color name="secondary">#03DAC6</color>
+    <color name="secondary_variant">#018786</color>
+    <color name="on_secondary">#000000</color>
+</resources>

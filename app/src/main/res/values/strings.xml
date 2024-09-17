@@ -1,0 +1,5 @@
+<resources>
+    <string name="app_name">随机数生成器</string>
+    <string name="title_random">光锥之内，就是命运</string>
+    <string name="title_timer">一小块凝固的时间</string>
+</resources>
