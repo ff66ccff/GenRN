@@ -1,4 +1,4 @@
-package com.randomnumbergenerator
+package com.randomnumbergenerator.screens
 
 import android.content.Context
 import android.widget.Toast
@@ -14,10 +14,12 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.foundation.rememberScrollState
 import kotlin.random.Random
 
 @Composable
-fun RandomScreen() {
+fun RandomScreen(onNavigateToAbout: () -> Unit) {
     var minValue by remember { mutableStateOf("") }
     var maxValue by remember { mutableStateOf("") }
     var numToGenerate by remember { mutableStateOf("") }
@@ -29,7 +31,6 @@ fun RandomScreen() {
     // 记录每个位置的历史生成记录，确保不重复
     val positionHistory = remember { mutableStateListOf<MutableList<Int>>() }
 
-    // 启动时加载保存的最小值、最大值和生成数量
     LaunchedEffect(Unit) {
         loadSavedValues(context, onLoad = { min, max, num ->
             minValue = min
@@ -85,7 +86,6 @@ fun RandomScreen() {
 
                 if (min != null && max != null && count != null && min < max && count > 0) {
                     if (count <= (max - min + 1)) {
-                        // 初始化位置历史记录，如果第一次生成
                         if (positionHistory.size != count) {
                             positionHistory.clear()
                             repeat(count) { positionHistory.add(mutableListOf()) }
@@ -126,6 +126,13 @@ fun RandomScreen() {
             Text("查看历史记录")
         }
 
+        Button(
+            onClick = onNavigateToAbout,
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            Text("关于")
+        }
+
         if (showDialog) {
             Dialog(onDismissRequest = { showDialog = false }) {
                 Surface(
@@ -163,24 +170,19 @@ fun RandomScreen() {
     }
 }
 
-// 生成随机数的函数，进行重复检测，并重置历史记录
 fun generateRandomNumbers(count: Int, min: Int, max: Int, history: List<MutableList<Int>>): List<Int> {
     val result = mutableListOf<Int>()
 
     for (i in 0 until count) {
-        // 如果某个位置的历史记录已满（即所有数字都用过了），则重置该位置的历史记录
         if (history[i].size == (max - min + 1)) {
             history[i].clear()
         }
 
-        // 获取该位置当前可用的数字列表
         val availableNumbers = (min..max).filter { it !in history[i] }
 
-        // 从可用数字中随机选取一个数字
         val number = availableNumbers.random()
         result.add(number)
 
-        // 将该数字添加到历史记录中
         history[i].add(number)
     }
 
