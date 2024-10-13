@@ -26,16 +26,19 @@ fun RandomScreen(onNavigateToAbout: () -> Unit) {
     var resultText by remember { mutableStateOf("生成的随机数将在此显示") }
     var history by remember { mutableStateOf(listOf<String>()) }
     var showDialog by remember { mutableStateOf(false) }
+    var isUniqueEnabled by remember { mutableStateOf(false) }  // 新增互不重复开关
     val context = LocalContext.current
 
     // 记录每个位置的历史生成记录，确保不重复
     val positionHistory = remember { mutableStateListOf<MutableList<Int>>() }
 
+    // 加载保存的值，包括开关状态
     LaunchedEffect(Unit) {
-        loadSavedValues(context, onLoad = { min, max, num ->
+        loadSavedValues(context, onLoad = { min, max, num, isUnique ->
             minValue = min
             maxValue = max
             numToGenerate = num
+            isUniqueEnabled = isUnique  // 恢复开关状态
         })
     }
 
@@ -47,7 +50,7 @@ fun RandomScreen(onNavigateToAbout: () -> Unit) {
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
         Text(
-            text = "随机数生成",
+            text = "随机数生成器",
             style = MaterialTheme.typography.titleLarge,
             color = MaterialTheme.colorScheme.primary
         )
@@ -78,6 +81,18 @@ fun RandomScreen(onNavigateToAbout: () -> Unit) {
             modifier = Modifier.fillMaxWidth()
         )
 
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Text(text = "一次性生成多个互相不重复的数字")
+            Switch(
+                checked = isUniqueEnabled,
+                onCheckedChange = { isUniqueEnabled = it }
+            )
+        }
+
         Button(
             onClick = {
                 val min = minValue.toIntOrNull()
@@ -91,13 +106,19 @@ fun RandomScreen(onNavigateToAbout: () -> Unit) {
                             repeat(count) { positionHistory.add(mutableListOf()) }
                         }
 
-                        val randomNumbers = generateRandomNumbers(count, min, max, positionHistory)
+                        // 根据开关状态决定生成逻辑
+                        val randomNumbers = if (isUniqueEnabled) {
+                            generateGloballyUniqueRandomNumbers(count, min, max, positionHistory)
+                        } else {
+                            generatePositionUniqueRandomNumbers(count, min, max, positionHistory)
+                        }
+
                         resultText = "生成的随机数为: ${randomNumbers.joinToString(", ")}"
 
                         val historyRecord = "第${history.size + 1}次生成: ${randomNumbers.joinToString(", ")}"
                         history = history + historyRecord
 
-                        saveValues(context, minValue, maxValue, numToGenerate)
+                        saveValues(context, minValue, maxValue, numToGenerate, isUniqueEnabled)  // 保存开关状态
                     } else {
                         resultText = "请求的数字数量超过可能的最大唯一数字数量"
                     }
@@ -170,7 +191,8 @@ fun RandomScreen(onNavigateToAbout: () -> Unit) {
     }
 }
 
-fun generateRandomNumbers(count: Int, min: Int, max: Int, history: List<MutableList<Int>>): List<Int> {
+// 生成每个位置互不重复的随机数（局部去重逻辑）
+fun generatePositionUniqueRandomNumbers(count: Int, min: Int, max: Int, history: List<MutableList<Int>>): List<Int> {
     val result = mutableListOf<Int>()
 
     for (i in 0 until count) {
@@ -189,19 +211,66 @@ fun generateRandomNumbers(count: Int, min: Int, max: Int, history: List<MutableL
     return result
 }
 
-fun saveValues(context: Context, minValue: String, maxValue: String, numToGenerate: String) {
+// 生成全局互不重复的随机数（全局去重逻辑）
+fun generateGloballyUniqueRandomNumbers(count: Int, min: Int, max: Int, history: List<MutableList<Int>>): List<Int> {
+    val result = mutableListOf<Int>()
+    val globalHistory = mutableSetOf<Int>() // 全局历史记录
+
+    for (i in 0 until count) {
+        if (history[i].size == (max - min + 1)) {
+            history[i].clear()
+        }
+
+        val availableNumbers = (min..max).filter { it !in history[i] && it !in globalHistory }
+
+        val number = availableNumbers.random()
+        result.add(number)
+
+        history[i].add(number)
+        globalHistory.add(number) // 更新全局历史记录
+    }
+
+    return result
+}
+
+// 修改后的保存函数，增加保存开关状态
+fun saveValues(context: Context, minValue: String, maxValue: String, numToGenerate: String, isUniqueEnabled: Boolean) {
     val sharedPreferences = context.getSharedPreferences("RandomPrefs", Context.MODE_PRIVATE)
     val editor = sharedPreferences.edit()
     editor.putString("minValue", minValue)
     editor.putString("maxValue", maxValue)
     editor.putString("numToGenerate", numToGenerate)
+    editor.putBoolean("isUniqueEnabled", isUniqueEnabled)  // 保存开关状态
     editor.apply()
 }
 
-fun loadSavedValues(context: Context, onLoad: (min: String, max: String, num: String) -> Unit) {
+// 修改后的加载函数，加载开关状态
+fun loadSavedValues(context: Context, onLoad: (min: String, max: String, num: String, isUnique: Boolean) -> Unit) {
     val sharedPreferences = context.getSharedPreferences("RandomPrefs", Context.MODE_PRIVATE)
     val minValue = sharedPreferences.getString("minValue", "") ?: ""
     val maxValue = sharedPreferences.getString("maxValue", "") ?: ""
     val numToGenerate = sharedPreferences.getString("numToGenerate", "") ?: ""
-    onLoad(minValue, maxValue, numToGenerate)
+    val isUniqueEnabled = sharedPreferences.getBoolean("isUniqueEnabled", false)  // 加载开关状态
+    onLoad(minValue, maxValue, numToGenerate, isUniqueEnabled)
+}
+
+@Composable
+fun AboutScreen() {
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(16.dp),
+        verticalArrangement = Arrangement.spacedBy(16.dp),
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) {
+        Text(
+            text = "关于",
+            style = MaterialTheme.typography.titleLarge,
+            color = MaterialTheme.colorScheme.primary
+        )
+        Text(
+            text = "这是一个基于kotlin的随机数生成器，使用material design。\n本项目的官方网址为：https://github.com/ff66ccff/GenRN",
+            style = MaterialTheme.typography.bodyLarge
+        )
+    }
 }

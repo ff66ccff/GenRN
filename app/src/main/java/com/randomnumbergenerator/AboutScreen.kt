@@ -27,30 +27,14 @@ fun AboutScreen(onNavigateBack: () -> Unit) {
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
         Text(
-            text = "这是一个基于Kotlin的随机数生成器，使用Material Design。",
+            text = "这是一个基于Kotlin的随机数生成器，使用了Material Design。",
             fontSize = 18.sp,
             textAlign = TextAlign.Center,
             fontWeight = FontWeight.Bold,
             modifier = Modifier.padding(bottom = 8.dp)
         )
         Text(
-            text = "本项目的目的是方便老师上课抽学号，于是本项目实现了如下特性：",
-            fontSize = 16.sp,
-            textAlign = TextAlign.Center,
-            modifier = Modifier.padding(bottom = 8.dp)
-        )
-        Text(
-            text = "1. 可以同时生成多个数字。",
-            fontSize = 16.sp,
-            modifier = Modifier.padding(bottom = 4.dp)
-        )
-        Text(
-            text = "2. 按照位置独立检测是否重复生成随机数，使用本项目生成的随机数在每个位置上都符合超几何分布。",
-            fontSize = 16.sp,
-            modifier = Modifier.padding(bottom = 16.dp)
-        )
-        Text(
-            text = "项目地址：$projectUrl",
+            text = "官网为：$projectUrl",
             fontSize = 16.sp,
             color = MaterialTheme.colorScheme.primary,
             modifier = Modifier
@@ -60,6 +44,18 @@ fun AboutScreen(onNavigateBack: () -> Unit) {
                 }
         )
         Spacer(modifier = Modifier.height(16.dp))
+        Text(
+            text = "使用本项目生成的随机数在每个位置上都符合超几何分布，即对于单个位置，会不重复地生成完毕取值范围内的所有数字。",
+            fontSize = 16.sp,
+            textAlign = TextAlign.Center,
+            modifier = Modifier.padding(bottom = 8.dp)
+        )
+        Text(
+            text = "若是不打开“一次性生成多个互相不重复的数字”的开关，那么在同一次生成的随机数中，不同的位置可能会出现重复的数字；若是打开开关，那么在同一次生成中，不同的位置也不会产生同样的数字。",
+            fontSize = 16.sp,
+            textAlign = TextAlign.Center,
+            modifier = Modifier.padding(bottom = 16.dp)
+        )
         Button(onClick = onNavigateBack) {
             Text(text = "返回")
         }
