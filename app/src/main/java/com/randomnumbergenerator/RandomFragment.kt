@@ -8,14 +8,16 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
-import androidx.compose.foundation.verticalScroll
-import androidx.compose.foundation.rememberScrollState
+import kotlinx.serialization.decodeFromString
+import kotlinx.serialization.encodeToString
+import kotlinx.serialization.json.Json
 import kotlin.random.Random
 
 @Composable
@@ -26,19 +28,33 @@ fun RandomScreen(onNavigateToAbout: () -> Unit) {
     var resultText by remember { mutableStateOf("生成的随机数将在此显示") }
     var history by remember { mutableStateOf(listOf<String>()) }
     var showDialog by remember { mutableStateOf(false) }
-    var isUniqueEnabled by remember { mutableStateOf(false) }  // 新增互不重复开关
+    var isUniqueEnabled by remember { mutableStateOf(false) }
     val context = LocalContext.current
 
     // 记录每个位置的历史生成记录，确保不重复
     val positionHistory = remember { mutableStateListOf<MutableList<Int>>() }
 
-    // 加载保存的值，包括开关状态
+    // 使用 rememberSaveable 保存是否已清空过历史的状态
+    var isHistoryCleared by rememberSaveable { mutableStateOf(false) }
+
+    // 仅在首次启动应用时清空历史记录
     LaunchedEffect(Unit) {
+        if (!isHistoryCleared) {
+            // 清空历史记录
+            history = emptyList()
+            saveHistory(context, history)
+            isHistoryCleared = true // 标记为已清空
+        } else {
+            // 加载历史记录
+            history = loadHistory(context)
+        }
+
+        // 加载保存的其他值
         loadSavedValues(context, onLoad = { min, max, num, isUnique ->
             minValue = min
             maxValue = max
             numToGenerate = num
-            isUniqueEnabled = isUnique  // 恢复开关状态
+            isUniqueEnabled = isUnique
         })
     }
 
@@ -106,7 +122,6 @@ fun RandomScreen(onNavigateToAbout: () -> Unit) {
                             repeat(count) { positionHistory.add(mutableListOf()) }
                         }
 
-                        // 根据开关状态决定生成逻辑
                         val randomNumbers = if (isUniqueEnabled) {
                             generateGloballyUniqueRandomNumbers(count, min, max, positionHistory)
                         } else {
@@ -118,7 +133,9 @@ fun RandomScreen(onNavigateToAbout: () -> Unit) {
                         val historyRecord = "第${history.size + 1}次生成: ${randomNumbers.joinToString(", ")}"
                         history = history + historyRecord
 
-                        saveValues(context, minValue, maxValue, numToGenerate, isUniqueEnabled)  // 保存开关状态
+                        // 保存历史记录和其他数据
+                        saveHistory(context, history)
+                        saveValues(context, minValue, maxValue, numToGenerate, isUniqueEnabled)
                     } else {
                         resultText = "请求的数字数量超过可能的最大唯一数字数量"
                     }
@@ -231,6 +248,27 @@ fun generateGloballyUniqueRandomNumbers(count: Int, min: Int, max: Int, history:
     }
 
     return result
+}
+
+// 保存历史记录到 SharedPreferences（顺序保存）
+fun saveHistory(context: Context, history: List<String>) {
+    val sharedPreferences = context.getSharedPreferences("RandomPrefs", Context.MODE_PRIVATE)
+    val editor = sharedPreferences.edit()
+    // 将历史记录转换为 JSON 字符串，保持顺序
+    val historyJson = Json.encodeToString(history)
+    editor.putString("history", historyJson)
+    editor.apply()
+}
+
+// 从 SharedPreferences 加载历史记录（保持顺序）
+fun loadHistory(context: Context): List<String> {
+    val sharedPreferences = context.getSharedPreferences("RandomPrefs", Context.MODE_PRIVATE)
+    val historyJson = sharedPreferences.getString("history", "[]")
+    return if (historyJson != null) {
+        Json.decodeFromString(historyJson)
+    } else {
+        emptyList()
+    }
 }
 
 // 修改后的保存函数，增加保存开关状态
