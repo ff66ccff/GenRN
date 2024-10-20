@@ -2,7 +2,7 @@
 # GenRN - 基于 Kotlin 的随机数生成器
 
 [![Download](https://img.shields.io/badge/Download-Latest%20Release-blue)](https://github.com/ff66ccff/GenRN/releases)
-[![GitHub stars](https://img.shields.io/github/stars/ff66ccff/GenRN?style=social)](https://github.com/ff66ccff/GenRN/stargazers)
+[Star History](https://api.star-history.com/svg?repos=ff66ccff/GenRN)
 
 GenRN 是一个基于 Kotlin 和 Material Design 构建的随机数生成器，旨在为课堂抽学号提供简便的解决方案。
 
