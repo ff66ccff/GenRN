@@ -18,6 +18,7 @@ import androidx.compose.ui.window.Dialog
 import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
+import java.io.File
 import kotlin.random.Random
 
 @Composable
@@ -31,21 +32,16 @@ fun RandomScreen(onNavigateToAbout: () -> Unit) {
     var isUniqueEnabled by remember { mutableStateOf(false) }
     val context = LocalContext.current
 
-    // 记录每个位置的历史生成记录，确保不重复
-    val positionHistory = remember { mutableStateListOf<MutableList<Int>>() }
-
     // 使用 rememberSaveable 保存是否已清空过历史的状态
     var isHistoryCleared by rememberSaveable { mutableStateOf(false) }
 
     // 仅在首次启动应用时清空历史记录
     LaunchedEffect(Unit) {
         if (!isHistoryCleared) {
-            // 清空历史记录
             history = emptyList()
             saveHistory(context, history)
             isHistoryCleared = true // 标记为已清空
         } else {
-            // 加载历史记录
             history = loadHistory(context)
         }
 
@@ -117,17 +113,7 @@ fun RandomScreen(onNavigateToAbout: () -> Unit) {
 
                 if (min != null && max != null && count != null && min < max && count > 0) {
                     if (count <= (max - min + 1)) {
-                        if (positionHistory.size != count) {
-                            positionHistory.clear()
-                            repeat(count) { positionHistory.add(mutableListOf()) }
-                        }
-
-                        val randomNumbers = if (isUniqueEnabled) {
-                            generateGloballyUniqueRandomNumbers(count, min, max, positionHistory)
-                        } else {
-                            generatePositionUniqueRandomNumbers(count, min, max, positionHistory)
-                        }
-
+                        val randomNumbers = generateUniqueRandomNumbers(context, count, min, max)
                         resultText = "生成的随机数为: ${randomNumbers.joinToString(", ")}"
 
                         val historyRecord = "第${history.size + 1}次生成: ${randomNumbers.joinToString(", ")}"
@@ -208,87 +194,95 @@ fun RandomScreen(onNavigateToAbout: () -> Unit) {
     }
 }
 
-// 生成每个位置互不重复的随机数（局部去重逻辑）
-fun generatePositionUniqueRandomNumbers(count: Int, min: Int, max: Int, history: List<MutableList<Int>>): List<Int> {
+// 全局历史文件
+private const val JSON_FILE_NAME = "generated_numbers.json"
+
+// 从JSON文件中加载已生成的数字
+fun loadGeneratedNumbers(context: Context): MutableSet<Int> {
+    val file = File(context.filesDir, JSON_FILE_NAME)
+    return if (file.exists()) {
+        val jsonData = file.readText()
+        Json.decodeFromString(jsonData)
+    } else {
+        mutableSetOf()
+    }
+}
+
+// 保存生成的数字到JSON文件
+fun saveGeneratedNumbers(context: Context, generatedNumbers: MutableSet<Int>) {
+    val file = File(context.filesDir, JSON_FILE_NAME)
+    val jsonData = Json.encodeToString(generatedNumbers)
+    file.writeText(jsonData)
+}
+
+// 清空生成历史文件
+fun clearGeneratedNumbers(context: Context) {
+    val file = File(context.filesDir, JSON_FILE_NAME)
+    file.writeText(Json.encodeToString(mutableSetOf<Int>()))
+}
+
+// 生成不重复的随机数
+fun generateUniqueRandomNumbers(context: Context, count: Int, min: Int, max: Int): List<Int> {
+    val generatedNumbers = loadGeneratedNumbers(context)
     val result = mutableListOf<Int>()
+    val rangeSize = max - min + 1
 
-    for (i in 0 until count) {
-        if (history[i].size == (max - min + 1)) {
-            history[i].clear()
+    if (count > rangeSize - generatedNumbers.size) {
+        throw IllegalArgumentException("请求的数量超过可生成的最大唯一数字数量")
+    }
+
+    val random = Random(System.currentTimeMillis())
+    while (result.size < count) {
+        val number = random.nextInt(min, max + 1)
+        if (number !in generatedNumbers) {
+            result.add(number)
+            generatedNumbers.add(number)
         }
+    }
 
-        val availableNumbers = (min..max).filter { it !in history[i] }
+    saveGeneratedNumbers(context, generatedNumbers)
 
-        val number = availableNumbers.random()
-        result.add(number)
-
-        history[i].add(number)
+    if (generatedNumbers.size >= rangeSize) {
+        clearGeneratedNumbers(context)
     }
 
     return result
 }
 
-// 生成全局互不重复的随机数（全局去重逻辑）
-fun generateGloballyUniqueRandomNumbers(count: Int, min: Int, max: Int, history: List<MutableList<Int>>): List<Int> {
-    val result = mutableListOf<Int>()
-    val globalHistory = mutableSetOf<Int>() // 全局历史记录
-
-    for (i in 0 until count) {
-        if (history[i].size == (max - min + 1)) {
-            history[i].clear()
-        }
-
-        val availableNumbers = (min..max).filter { it !in history[i] && it !in globalHistory }
-
-        val number = availableNumbers.random()
-        result.add(number)
-
-        history[i].add(number)
-        globalHistory.add(number) // 更新全局历史记录
-    }
-
-    return result
-}
-
-// 保存历史记录到 SharedPreferences（顺序保存）
+// SharedPreferences 保存历史记录
 fun saveHistory(context: Context, history: List<String>) {
     val sharedPreferences = context.getSharedPreferences("RandomPrefs", Context.MODE_PRIVATE)
     val editor = sharedPreferences.edit()
-    // 将历史记录转换为 JSON 字符串，保持顺序
     val historyJson = Json.encodeToString(history)
     editor.putString("history", historyJson)
     editor.apply()
 }
 
-// 从 SharedPreferences 加载历史记录（保持顺序）
+// 从 SharedPreferences 加载历史记录
 fun loadHistory(context: Context): List<String> {
     val sharedPreferences = context.getSharedPreferences("RandomPrefs", Context.MODE_PRIVATE)
     val historyJson = sharedPreferences.getString("history", "[]")
-    return if (historyJson != null) {
-        Json.decodeFromString(historyJson)
-    } else {
-        emptyList()
-    }
+    return if (historyJson != null) Json.decodeFromString(historyJson) else emptyList()
 }
 
-// 修改后的保存函数，增加保存开关状态
+// 保存输入值
 fun saveValues(context: Context, minValue: String, maxValue: String, numToGenerate: String, isUniqueEnabled: Boolean) {
     val sharedPreferences = context.getSharedPreferences("RandomPrefs", Context.MODE_PRIVATE)
     val editor = sharedPreferences.edit()
     editor.putString("minValue", minValue)
     editor.putString("maxValue", maxValue)
     editor.putString("numToGenerate", numToGenerate)
-    editor.putBoolean("isUniqueEnabled", isUniqueEnabled)  // 保存开关状态
+    editor.putBoolean("isUniqueEnabled", isUniqueEnabled)
     editor.apply()
 }
 
-// 修改后的加载函数，加载开关状态
+// 加载输入值
 fun loadSavedValues(context: Context, onLoad: (min: String, max: String, num: String, isUnique: Boolean) -> Unit) {
     val sharedPreferences = context.getSharedPreferences("RandomPrefs", Context.MODE_PRIVATE)
     val minValue = sharedPreferences.getString("minValue", "") ?: ""
     val maxValue = sharedPreferences.getString("maxValue", "") ?: ""
     val numToGenerate = sharedPreferences.getString("numToGenerate", "") ?: ""
-    val isUniqueEnabled = sharedPreferences.getBoolean("isUniqueEnabled", false)  // 加载开关状态
+    val isUniqueEnabled = sharedPreferences.getBoolean("isUniqueEnabled", false)
     onLoad(minValue, maxValue, numToGenerate, isUniqueEnabled)
 }
 
