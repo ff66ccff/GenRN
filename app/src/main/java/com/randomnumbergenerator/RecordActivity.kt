@@ -28,7 +28,8 @@ class RecordActivity : AppCompatActivity() {
         rvGenerated.layoutManager = LinearLayoutManager(this)
         rvAvailable.layoutManager = LinearLayoutManager(this)
 
-        rvGenerated.adapter = NumberAdapter(RandomNumberManager.generatedNumbers)
+        // 注意：generatedNumbers现在是一个List<List<Int>>，每个子List代表一次生成的记录
+        rvGenerated.adapter = GenerationAdapter(RandomNumberManager.generatedNumbers)
         rvAvailable.adapter = AvailableAdapter(RandomNumberManager.pool)
 
         findViewById<MaterialToolbar>(R.id.topAppBar).setNavigationOnClickListener {
@@ -36,35 +37,51 @@ class RecordActivity : AppCompatActivity() {
         }
     }
 
+    /**
+     * 修改预选数字的提示：
+     * 原来直接显示preselectedNumbers.size，现改为剩余可预选数量 = generationSize - 已预选数量
+     */
     private fun showSelectionFeedback(number: Int, isSelected: Boolean) {
+        val remaining = RandomNumberManager.generationSize - RandomNumberManager.preselectedNumbers.size
         val message = if (isSelected) {
-            "已预选数字: $number (剩余可预选: ${RandomNumberManager.preselectedNumbers.size})"
+            "已预选数字: $number (剩余可预选: $remaining)"
         } else {
-            "已取消预选: $number"
+            "已取消预选: $number (剩余可预选: $remaining)"
         }
         Toast.makeText(this, message, Toast.LENGTH_SHORT).show()
     }
 
-    inner class NumberAdapter(private val numbers: List<Int>) :
-        RecyclerView.Adapter<NumberAdapter.NumberViewHolder>() {
+    /**
+     * 生成数字记录适配器
+     * 显示格式为：第x次生成的数字为：number1,number2,...,numberx
+     */
+    inner class GenerationAdapter(private val rounds: List<List<Int>>) :
+        RecyclerView.Adapter<GenerationAdapter.GenerationViewHolder>() {
 
-        inner class NumberViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
-            val tvNumber: TextView = itemView.findViewById(R.id.text1)
+        inner class GenerationViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
+            val tvRecord: TextView = itemView.findViewById(R.id.text1)
         }
 
-        override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): NumberViewHolder {
+        override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): GenerationViewHolder {
             val view = LayoutInflater.from(parent.context)
                 .inflate(R.layout.simple_list_item_custom, parent, false)
-            return NumberViewHolder(view)
+            return GenerationViewHolder(view)
         }
 
-        override fun onBindViewHolder(holder: NumberViewHolder, position: Int) {
-            holder.tvNumber.text = numbers[position].toString()
+        override fun onBindViewHolder(holder: GenerationViewHolder, position: Int) {
+            val round = rounds[position]
+            holder.tvRecord.text = "第${position + 1}次生成的数字为：${round.joinToString(",")}"
         }
 
-        override fun getItemCount(): Int = numbers.size
+        override fun getItemCount(): Int = rounds.size
     }
 
+    /**
+     * 可选数字适配器
+     *
+     * 注意：预选的数字不会从列表中移除，只是改变背景颜色，
+     * 这样满足“预选的数字不应该单独列出来”的要求，且生成数字总数依然固定。
+     */
     inner class AvailableAdapter(private val numbers: List<Int>) :
         RecyclerView.Adapter<AvailableAdapter.AvailableViewHolder>() {
 
@@ -82,6 +99,7 @@ class RecordActivity : AppCompatActivity() {
             val number = numbers[position]
             holder.tvNumber.text = number.toString()
 
+            // 如果该数字已被预选，则改变背景色
             if (RandomNumberManager.preselectedNumbers.contains(number)) {
                 holder.itemView.setBackgroundColor(
                     ContextCompat.getColor(
@@ -97,7 +115,7 @@ class RecordActivity : AppCompatActivity() {
                 val isSelected = RandomNumberManager.togglePreselection(number)
                 notifyItemChanged(position)
                 showSelectionFeedback(number, isSelected)
-                RandomNumberManager.saveState(this@RecordActivity) // 新增保存
+                RandomNumberManager.saveState(this@RecordActivity) // 保存状态
             }
         }
 
