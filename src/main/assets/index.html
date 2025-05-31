@@ -1,0 +1,596 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>随机数生成器</title>
+
+    <link href="basic-styles.css" rel="stylesheet">
+
+    <style>
+        @font-face {
+            font-family: 'Material Icons';
+            font-style: normal;
+            font-weight: 400;
+            src: url('MaterialIcons-Regular.ttf') format('truetype'); 
+        }
+
+        .material-icons {
+            font-family: 'Material Icons';
+            font-weight: normal;
+            font-style: normal;
+            font-size: 24px;
+            display: inline-block;
+            line-height: 1;
+            text-transform: none;
+            letter-spacing: normal;
+            word-wrap: normal;
+            white-space: nowrap;
+            direction: ltr;
+            -webkit-font-smoothing: antialiased;
+            text-rendering: optimizeLegibility;
+            -moz-osx-font-smoothing: grayscale;
+            font-feature-settings: 'liga';
+        }
+    </style>
+
+    <style>
+        *, *::before, *::after { 
+            box-sizing: border-box;
+        }
+
+        :root { 
+            --primary: #6200ee; 
+            --primary-dark: #3700b3; 
+            --secondary: #03dac6; 
+            --surface: #ffffff; 
+            --background: #f5f5f5; 
+            --on-primary: #ffffff; 
+            --on-secondary: #000000; 
+            --on-surface: #000000; 
+            --on-background: #000000; 
+            --error: #b00020; 
+            --divider: rgba(0, 0, 0, 0.12); 
+            --shadow: 0 2px 10px rgba(0, 0, 0, 0.1); 
+            --card-radius: 16px; 
+            --element-radius: 8px; 
+            --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); 
+             
+            .dark-mode { 
+                --primary: #a78bfa; 
+                --primary-dark: #818cf8; 
+                --secondary: #7cb9e8; 
+                --surface: #1e293b; 
+                --background: #1a202c; 
+                --on-primary: #33334d; 
+                --on-secondary: #334155; 
+                --on-surface: #e2e8f0; 
+                --on-background: #e2e8f0; 
+                --divider: rgba(255, 255, 255, 0.08); 
+                --shadow: 0 4px 8px rgba(0, 0, 0, 0.4); 
+            } 
+        }
+
+        body { 
+            background-color: var(--background); 
+            color: var(--on-background); 
+            padding: 16px; 
+            min-height: 100vh; 
+            background-image: radial-gradient(circle at 10% 20%, rgba(98, 0, 238, 0.05) 0%, transparent 20%); 
+            transition: background-color 0.5s ease, color 0.5s ease; 
+            display: flex;
+            flex-direction: column;
+        }
+
+        .container {
+            flex-grow: 1; 
+        }
+
+        .app-container { 
+            max-width: 800px; 
+            margin: 0 auto; 
+            animation: fadeIn 0.6s ease-out; 
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1); 
+            margin-top: 24px; 
+            margin-bottom: 24px;
+        }
+
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+        header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; }
+        .header-container { display: flex; align-items: center; gap: 12px; }
+        .header-icon { font-size: 24px; color: var(--primary); }
+
+        .theme-toggle {
+            background: none; border: none; cursor: pointer; padding: 8px; border-radius: 50%;
+            display: flex; align-items: center; justify-content: center;
+            transition: var(--transition); background-color: rgba(0, 0, 0, 0.05);
+            width: 40px; height: 40px;
+        }
+        .theme-toggle:hover { background-color: rgba(0, 0, 0, 0.1); transform: rotate(15deg); }
+        
+        .theme-toggle img {
+            width: 22px; 
+            height: 22px;
+        }
+        .dark-mode .theme-toggle img {
+            filter: invert(1) brightness(1.5) contrast(0.8); 
+        }
+
+        .card { 
+            background-color: var(--surface); border-radius: var(--card-radius); padding: 24px;
+            margin-bottom: 24px; box-shadow: var(--shadow);
+            transition: background-color 0.5s ease, box-shadow 0.5s ease;
+        }
+        .input-group { display: flex; flex-wrap: wrap; gap: 16px; margin-bottom: 24px; }
+        .input-field { flex: 1 1 auto; min-width: 150px; }
+        label { display: block; margin-bottom: 8px; color: var(--on-surface); opacity: 0.7; font-size: 16px; transition: color 0.5s ease; }
+        input[type="number"] {
+            width: 100%; padding: 12px 16px; border-radius: var(--element-radius);
+            border: 1px solid var(--divider); background-color: var(--surface);
+            color: var(--on-surface); font-size: 16px; transition: var(--transition);
+        }
+        input[type="number"]:focus { outline: none; border-color: var(--primary); box-shadow: 0 0 0 2px rgba(98, 0, 238, 0.2); }
+        .actions { display: flex; gap: 12px; margin-top: 16px; }
+        .btn {
+            padding: 12px 24px; border-radius: var(--element-radius); border: none;
+            font-size: 16px; font-weight: 500; cursor: pointer; display: flex;
+            align-items: center; justify-content: center; transition: var(--transition); gap: 8px;
+        }
+        .btn-primary { background-color: var(--primary); color: var(--on-primary); flex: 1; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1); }
+        .btn-primary:hover { background-color: var(--primary-dark); transform: translateY(-2px); box-shadow: 0 6px 8px rgba(0, 0, 0, 0.15); }
+        .btn-primary:active { transform: translateY(0); box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1); }
+        .btn-secondary { background-color: transparent; color: var(--primary); border: 1px solid var(--divider); }
+        .btn-secondary:hover { background-color: rgba(0, 0, 0, 0.05); transform: translateY(-2px); }
+        .result-container { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 16px; min-height: 60px; }
+        .result-number {
+            background-color: var(--primary); color: var(--on-primary); width: 50px; height: 50px;
+            border-radius: 50%; display: flex; align-items: center; justify-content: center;
+            font-size: 18px; font-weight: 500; box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+        }
+        .history-container { max-height: 300px; overflow-y: auto; padding: 8px; border-radius: var(--element-radius); background-color: var(--surface); }
+        .history-item { padding: 12px 16px; border-bottom: 1px solid var(--divider); display: flex; justify-content: space-between; transition: border-color 0.5s ease; }
+        @keyframes slideInFromKeyframes { from { opacity: 0; transform: translateX(-20px); } to { opacity: 1; transform: translateX(0); } }
+        .history-item:last-child { border-bottom: none; }
+        .history-numbers { display: flex; gap: 8px; flex-wrap: wrap; }
+        
+        .history-number { 
+            background-color: var(--primary); 
+            color: var(--on-primary); 
+            padding: 4px 0;  /* Vertical padding only */
+            border-radius: 16px; 
+            font-size: 14px; 
+            transition: background-color 0.5s ease; 
+            
+            min-width: 38px;    /* Adjusted for up to 3-digit numbers */
+            display: inline-block; 
+            text-align: center;    
+            margin: 2px;          
+            line-height: 1.2;  /* Adjusted for better vertical centering */
+        }
+
+        .history-index { font-weight: 500; min-width: 60px; transition: color 0.5s ease; }
+        .number-pool { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 16px; padding: 8px; overflow-x: auto; }
+        .number-item {
+            width: 40px; height: 40px; display: flex; align-items: center; justify-content: center;
+            border-radius: 50%; font-size: 16px; cursor: pointer;
+            transition: background-color 0.5s ease, transform 0.3s ease, box-shadow 0.3s ease, border-color 0.5s ease;
+            user-select: none;
+        }
+        .available { background-color: rgba(3, 218, 198, 0.2); color: var(--on-surface); border: 1px solid var(--secondary); transition: background-color 0.5s ease, color 0.5s ease, border-color 0.5s ease; }
+        .available:hover { background-color: rgba(3, 218, 198, 0.35); transform: scale(1.1); }
+        .generated { background-color: var(--primary); color: var(--on-primary); transition: background-color 0.5s ease, color 0.5s ease; }
+        .selected { background-color: var(--secondary); color: var(--on-secondary); transform: scale(1.1); box-shadow: 0 0 10px rgba(3, 218, 198, 0.5); animation: pulse 1.5s infinite; }
+        .status-bar { display: flex; justify-content: space-between; margin-top: 16px; padding: 12px; background-color: rgba(0, 0, 0, 0.05); border-radius: var(--element-radius); font-size: 14px; transition: background-color 0.5s ease, color 0.5s ease; }
+        .selection-info {
+            margin-top: 8px; padding: 8px 12px; background-color: rgba(98, 0, 238, 0.1);
+            border-radius: var(--element-radius); color: var(--primary); font-size: 14px;
+            display: flex; align-items: center; gap: 8px;
+            transition: background-color 0.5s ease, color 0.5s ease; flex-wrap: wrap;
+        }
+        .dark-mode .selection-info { background-color: rgba(167, 139, 250, 0.15); color: var(--on-surface); }
+        .guide-main-text { margin-right: 4px; }
+        .guide-color-detail {}
+        .reset-info {
+            margin-top: 16px; padding: 12px; background-color: rgba(176, 0, 32, 0.1);
+            border-radius: var(--element-radius); color: var(--error); font-size: 14px;
+            display: none; animation: shake 0.5s; transition: background-color 0.5s ease, color 0.5s ease;
+        }
+        .empty-state { text-align: center; padding: 32px; color: var(--on-surface); opacity: 0.5; width: 100%; transition: color 0.5s ease; }
+        .notification {
+            position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%) translateY(100px);
+            background-color: var(--primary); color: var(--on-primary); padding: 12px 24px;
+            border-radius: 30px; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15); z-index: 1000;
+            display: flex; align-items: center; gap: 8px;
+            animation: slideUp 0.3s forwards, fadeOut 0.3s forwards 2.7s;
+            transition: background-color 0.5s ease;
+        }
+        @keyframes slideUp { to { transform: translateX(-50%) translateY(0); } }
+        @keyframes fadeOut { to { opacity: 0; } }
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); } 10%, 30%, 50%, 70%, 90% { transform: translateX(-5px); }
+            20%, 40%, 60%, 80% { transform: translateX(5px); }
+        }
+        @keyframes popIn { 0% { transform: scale(0.5); opacity: 0; } 70% { transform: scale(1.1); } 100% { transform: scale(1); opacity: 1; } }
+        
+        .page-footer {
+            text-align: center;
+            padding: 20px 0;
+            margin-top: auto; 
+            font-size: 14px;
+            color: var(--on-background);
+            opacity: 0.7;
+            border-top: 1px solid var(--divider); 
+        }
+        .page-footer a { color: var(--primary); text-decoration: none; }
+        .page-footer a:hover { text-decoration: underline; }
+        .dark-mode .page-footer { border-top-color: var(--divider); }
+        .dark-mode .page-footer a { color: var(--secondary); }
+
+        @media (max-width: 768px) {
+            .app-container { margin-top: 16px; box-shadow: none; }
+            .input-group { flex-direction: column; } .input-field { min-width: 100%; }
+            .number-item { width: 36px; height: 36px; font-size: 14px; }
+            .result-number { width: 40px; height: 40px; font-size: 16px; }
+            .card { padding: 16px; } .header-icon { font-size: 20px; }
+            .btn { padding: 10px 16px; font-size: 14px; }
+            .status-bar { flex-direction: column; gap: 4px; } 
+            .history-item { flex-direction: column; align-items: flex-start; gap: 8px; }
+            .history-index { margin-top: 0; }
+        }
+        @media (max-width: 480px) {
+            .number-item { width: 30px; height: 30px; font-size: 12px; }
+            .result-number { width: 30px; height: 30px; font-size: 12px; }
+            
+            .history-number { 
+                font-size: 10px; 
+                padding: 3px 0; 
+                border-radius: 10px; 
+                min-width: 28px; /* Adjusted for 3-digit numbers at smaller_steps font-size */
+                line-height: 1.2;
+            }
+
+            .header-icon { font-size: 18px; } .actions { flex-direction: column; }
+            .btn { width: 100%; } .theme-toggle { width: 32px; height: 32px; }
+            .theme-toggle img { width: 18px; height: 18px; }
+            .guide-color-detail { font-size: 0.85em; display: block; margin-left: 0; margin-top: 4px; }
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+    <header>
+        <div class="header-container">
+            <div class="header-icon">
+                <span class="material-icons">shuffle</span> 
+            </div>
+            <!-- Removed h1 title -->
+        </div>
+        <button class="theme-toggle" id="themeToggle">
+            <!-- SVG icon will be injected here by JavaScript -->
+        </button>
+    </header>
+
+    <div class="app-container">
+        <div class="card">
+            <h2 class="card-title">
+                <span class="material-icons">tune</span>
+                生成设置
+            </h2>
+            <div class="input-group">
+                <div class="input-field">
+                    <label for="minValue">最小值</label>
+                    <input type="number" id="minValue" value="1" min="0" max="999"> <!-- Max 3 digits -->
+                </div>
+                <div class="input-field">
+                    <label for="maxValue">最大值</label>
+                    <input type="number" id="maxValue" value="100" min="1" max="999"> <!-- Max 3 digits -->
+                </div>
+                <div class="input-field">
+                    <label for="count">单次生成数量</label>
+                    <input type="number" id="count" value="5" min="1" max="100">
+                </div>
+            </div>
+            <div class="status-bar">
+                <div>总数: <span id="totalNumbers">100</span></div>
+                <div>已生成: <span id="generatedCount">0</span></div>
+                <div>剩余: <span id="remainingCount">100</span></div>
+            </div>
+            <div class="selection-info" id="selectionInfoDisplay">
+                <span class="material-icons">info</span>
+                <span>已选择 <span id="selectedCount">0</span> 个必选数字</span>
+            </div>
+            <div class="actions">
+                <button class="btn btn-primary" id="generateBtn">
+                    <span class="material-icons">shuffle</span>
+                    生成随机数
+                </button>
+                <button class="btn btn-secondary" id="resetBtn">
+                    <span class="material-icons">refresh</span>
+                    重置数字池
+                </button>
+            </div>
+            <div class="reset-info" id="resetInfo">
+                <span class="material-icons">info</span>
+                所有数字已生成完毕！系统已自动重置数字池，保留当前设置。
+            </div>
+        </div>
+        <div class="card">
+            <h2 class="card-title">
+                <span class="material-icons">stars</span>
+                当前结果
+            </h2>
+            <div class="result-container" id="resultContainer">
+                <div class="empty-state">点击"生成随机数"按钮开始</div>
+            </div>
+        </div>
+        <div class="card">
+            <h2 class="card-title">
+                <span class="material-icons">grid_on</span>
+                数字池
+            </h2>
+            <div class="selection-info">
+                <span class="material-icons">touch_app</span>
+                <span class="guide-main-text">点击数字将其标记为下次必选</span><span id="numberPoolColorGuideText" class="guide-color-detail">（绿色为未生成，紫色为已生成）</span>
+            </div>
+            <div class="number-pool" id="numberPool"></div>
+        </div>
+        <div class="card">
+            <h2 class="card-title">
+                <span class="material-icons">history</span>
+                生成历史
+            </h2>
+            <div class="history-container" id="historyContainer">
+                <div class="empty-state">暂无生成记录</div>
+            </div>
+        </div>
+    </div> 
+
+    <footer class="page-footer">
+        <p>
+            项目地址: <a href="https://github.com/ff66ccff/GenRN" target="_blank" rel="noopener noreferrer">github.com/ff66ccff/GenRN</a>
+        </p>
+    </footer>
+
+</div> 
+
+
+<div class="notification" id="notification">
+    <span class="material-icons" id="notificationIcon">info</span>
+    <span id="notificationText">通知内容</span>
+</div>
+
+<script>
+    const state = { 
+        minValue: 1, maxValue: 100, count: 5, generatedNumbers: [], selectedNumbers: new Set(),
+        history: [], darkMode: false, lastGenerated: [], historyIndex: 0, animationEnabled: true
+    };
+
+    const elements = {
+        minValue: document.getElementById('minValue'), maxValue: document.getElementById('maxValue'),
+        count: document.getElementById('count'), generateBtn: document.getElementById('generateBtn'),
+        resetBtn: document.getElementById('resetBtn'), resultContainer: document.getElementById('resultContainer'),
+        numberPool: document.getElementById('numberPool'), historyContainer: document.getElementById('historyContainer'),
+        themeToggle: document.getElementById('themeToggle'),
+        totalNumbers: document.getElementById('totalNumbers'), generatedCount: document.getElementById('generatedCount'),
+        remainingCount: document.getElementById('remainingCount'), resetInfo: document.getElementById('resetInfo'),
+        notification: document.getElementById('notification'), notificationIcon: document.getElementById('notificationIcon'),
+        notificationText: document.getElementById('notificationText'), selectedCount: document.getElementById('selectedCount'),
+        selectionInfoDisplay: document.getElementById('selectionInfoDisplay'),
+        numberPoolColorGuideText: document.getElementById('numberPoolColorGuideText')
+    };
+
+    function init() { 
+        loadState(); setupEventListeners(); renderNumberPool(); updateHistoryDisplay();
+        updateResultDisplay(); applyTheme(); updateSelectedCount();
+    }
+
+    function setupEventListeners() { 
+        elements.generateBtn.addEventListener('click', generateNumbers);
+        elements.resetBtn.addEventListener('click', resetNumberPool);
+        elements.themeToggle.addEventListener('click', toggleTheme);
+        elements.minValue.addEventListener('change', updateSettings);
+        elements.maxValue.addEventListener('change', updateSettings);
+        elements.count.addEventListener('change', updateSettings);
+    }
+
+    function showNotification(text, isError = false) { 
+        elements.notificationText.textContent = text;
+        elements.notificationIcon.textContent = isError ? 'error' : 'info';
+        elements.notification.style.backgroundColor = isError ? 'var(--error)' : 'var(--primary)';
+        elements.notification.style.animation = 'none';
+        void elements.notification.offsetWidth;
+        elements.notification.style.animation = 'slideUp 0.3s forwards, fadeOut 0.3s forwards 2.7s';
+    }
+
+    function updateSettings() { 
+        state.minValue = parseInt(elements.minValue.value);
+        state.maxValue = parseInt(elements.maxValue.value);
+        state.count = parseInt(elements.count.value);
+
+        const minAttr = parseInt(elements.minValue.min), maxAttrMinVal = parseInt(elements.minValue.max);
+        if (isNaN(state.minValue) || (!isNaN(minAttr) && state.minValue < minAttr)) state.minValue = isNaN(minAttr) ? 0 : minAttr;
+        if (!isNaN(maxAttrMinVal) && state.minValue > maxAttrMinVal) state.minValue = maxAttrMinVal;
+        elements.minValue.value = state.minValue;
+
+        const minAttrMaxVal = parseInt(elements.maxValue.min), maxAttr = parseInt(elements.maxValue.max);
+        if (isNaN(state.maxValue) || (!isNaN(minAttrMaxVal) && state.maxValue < minAttrMaxVal)) state.maxValue = isNaN(minAttrMaxVal) ? 1 : minAttrMaxVal;
+        if (!isNaN(maxAttr) && state.maxValue > maxAttr) state.maxValue = maxAttr;
+        if (state.minValue > state.maxValue) { state.maxValue = state.minValue; showNotification("最大值已调整为不小于最小值。", true); }
+        elements.maxValue.value = state.maxValue;
+
+        const minAttrCount = parseInt(elements.count.min), maxAttrCountVal = parseInt(elements.count.max);
+        if (isNaN(state.count) || (!isNaN(minAttrCount) && state.count < minAttrCount)) state.count = isNaN(minAttrCount) ? 1 : minAttrCount;
+        if (!isNaN(maxAttrCountVal) && state.count > maxAttrCountVal) state.count = maxAttrCountVal;
+        const totalNumbers = Math.max(0, state.maxValue - state.minValue + 1);
+        if (state.count > totalNumbers && totalNumbers > 0) { state.count = totalNumbers; showNotification(`生成数量已调整为总数 (${totalNumbers})。`, true); }
+        elements.count.value = state.count;
+        resetNumberPool(); saveState();
+    }
+
+    function generateNumbers() { 
+        const totalNumbers = Math.max(0, state.maxValue - state.minValue + 1);
+        if (totalNumbers <= 0) { showNotification("数字范围无效，无法生成数字。", true); return; }
+        if (state.generatedNumbers.length >= totalNumbers) {
+            elements.resetInfo.style.display = 'block'; setTimeout(() => { elements.resetInfo.style.display = 'none'; }, 5000);
+            state.generatedNumbers = []; state.selectedNumbers.clear(); state.history = []; state.historyIndex = 0; state.lastGenerated = [];
+            renderNumberPool(); updateResultDisplay(); updateHistoryDisplay();
+            showNotification("所有数字已生成完毕，数字池和历史已重置。"); saveState(); return;
+        }
+        if (state.selectedNumbers.size > state.count) { showNotification(`必选数字数量 (${state.selectedNumbers.size}) 不能超过生成数量 (${state.count})`, true); return; }
+        const availableForGeneration = [];
+        for (let i = state.minValue; i <= state.maxValue; i++) if (!state.generatedNumbers.includes(i)) availableForGeneration.push(i);
+        const result = [];
+        const mustInclude = Array.from(state.selectedNumbers).filter(num => num >= state.minValue && num <= state.maxValue && availableForGeneration.includes(num));
+        mustInclude.forEach(num => {
+            if (result.length < state.count) {
+                result.push(num);
+                const indexInAvailable = availableForGeneration.indexOf(num);
+                if (indexInAvailable > -1) availableForGeneration.splice(indexInAvailable, 1);
+            }
+        });
+        let neededRandomCount = state.count - result.length;
+        while (neededRandomCount > 0 && availableForGeneration.length > 0) {
+            const randomIndex = Math.floor(Math.random() * availableForGeneration.length);
+            result.push(availableForGeneration.splice(randomIndex, 1)[0]); neededRandomCount--;
+        }
+        if (result.length === 0) {
+            const msg = state.selectedNumbers.size > 0 ? "所选必选数字均已生成、无效或无法满足生成数量。" : "没有可生成的有效数字。";
+            showNotification(msg, true);
+            if (state.selectedNumbers.size > 0) { state.selectedNumbers.clear(); updateSelectedCount(); }
+            saveState(); return;
+        }
+        result.forEach(num => {
+            if (!state.generatedNumbers.includes(num)) { state.generatedNumbers.push(num); updateNumberState(num, true); }
+            state.selectedNumbers.delete(num);
+        });
+        state.historyIndex++; state.history.unshift({ index: state.historyIndex, numbers: [...result].sort((a, b) => a - b) });
+        state.lastGenerated = [...result].sort((a, b) => a - b); saveState();
+        updateResultDisplay(); updateHistoryDisplay(); updateStats(); updateSelectedCount();
+        if (state.generatedNumbers.length >= totalNumbers) { elements.resetInfo.style.display = 'block'; setTimeout(() => { elements.resetInfo.style.display = 'none'; }, 5000); }
+        showNotification(`成功生成 ${result.length} 个随机数`);
+    }
+
+    function updateNumberState(num, isNewlyGenerated = false) { 
+        const el = document.querySelector(`.number-item[data-number="${num}"]`);
+        if (!el) return; el.classList.remove('available', 'selected'); el.classList.add('generated');
+        el.removeEventListener('click', handleNumberClick);
+        if (isNewlyGenerated && state.animationEnabled) {
+            el.style.animation = 'none'; void el.offsetWidth; el.style.animation = 'popIn 0.5s ease';
+            setTimeout(() => { el.style.animation = ''; }, 500);
+        }
+    }
+
+    function handleNumberClick(event) { 
+        const num = parseInt(event.target.dataset.number);
+        if (state.generatedNumbers.includes(num) || !event.target.classList.contains('available')) return;
+        if (state.selectedNumbers.has(num)) { state.selectedNumbers.delete(num); event.target.classList.remove('selected'); }
+        else {
+            if (state.selectedNumbers.size >= state.count) { showNotification(`最多只能选择 ${state.count} 个必选数字`, true); return; }
+            state.selectedNumbers.add(num); event.target.classList.add('selected');
+        }
+        updateSelectedCount(); saveState();
+    }
+
+    function resetNumberPool() { 
+        state.generatedNumbers = []; state.selectedNumbers.clear(); state.history = []; state.historyIndex = 0; state.lastGenerated = [];
+        renderNumberPool(); updateResultDisplay(); updateHistoryDisplay(); updateSelectedCount();
+        saveState(); showNotification("数字池和历史已重置，保留当前设置。");
+    }
+
+    function renderNumberPool() { 
+        elements.numberPool.innerHTML = '';
+        const range = state.maxValue - state.minValue + 1;
+        if (range <= 0 && (state.minValue > 0 || state.maxValue > 0)) { elements.numberPool.innerHTML = '<div class="empty-state">数字范围无效</div>'; updateStats(); return; }
+        if (range > 500) { elements.numberPool.innerHTML = '<div class="empty-state">数字范围过大，不显示数字池</div>'; updateStats(); return; }
+        for (let i = state.minValue; i <= state.maxValue; i++) {
+            const el = document.createElement('div'); el.className = 'number-item'; el.textContent = i; el.dataset.number = i;
+            if (state.generatedNumbers.includes(i)) el.classList.add('generated');
+            else { el.classList.add('available'); el.addEventListener('click', handleNumberClick); if (state.selectedNumbers.has(i)) el.classList.add('selected'); }
+            elements.numberPool.appendChild(el);
+        }
+        updateStats();
+    }
+
+    function updateSelectedCount() { elements.selectedCount.textContent = state.selectedNumbers.size; } 
+
+    function updateStats() { 
+        const total = Math.max(0, state.maxValue - state.minValue + 1); const gén = state.generatedNumbers.length;
+        elements.totalNumbers.textContent = total; elements.generatedCount.textContent = gén; elements.remainingCount.textContent = Math.max(0, total - gén);
+    }
+
+    function updateResultDisplay() { 
+        elements.resultContainer.innerHTML = '';
+        if (state.lastGenerated.length === 0) { elements.resultContainer.innerHTML = '<div class="empty-state">点击"生成随机数"按钮开始</div>'; return; }
+        state.lastGenerated.forEach(num => {
+            const el = document.createElement('div'); el.className = 'result-number';
+            if (state.animationEnabled) el.style.animation = 'popIn 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275)';
+            el.textContent = num; elements.resultContainer.appendChild(el);
+        });
+    }
+
+    function updateHistoryDisplay() { 
+        elements.historyContainer.innerHTML = '';
+        if (state.history.length === 0) { elements.historyContainer.innerHTML = '<div class="empty-state">暂无生成记录</div>'; return; }
+        state.history.forEach(record => {
+            const item = document.createElement('div'); item.className = 'history-item';
+            if (state.animationEnabled) item.style.animation = 'slideInFromKeyframes 0.3s ease-out';
+            const index = document.createElement('div'); index.className = 'history-index'; index.textContent = `第${record.index}次`; item.appendChild(index);
+            const nums = document.createElement('div'); nums.className = 'history-numbers';
+            record.numbers.forEach(n => { const numEl = document.createElement('div'); numEl.className = 'history-number'; numEl.textContent = n; nums.appendChild(numEl); });
+            item.appendChild(nums); elements.historyContainer.appendChild(item);
+        });
+    }
+
+    function updateNumberPoolColorGuideText() { 
+        if (elements.numberPoolColorGuideText) {
+            elements.numberPoolColorGuideText.textContent = state.darkMode ? '（浅青底淡蓝边框为未生成，淡紫为已生成）' : '（绿色为未生成，紫色为已生成）';
+        }
+    }
+
+    function toggleTheme() { state.darkMode = !state.darkMode; applyTheme(); saveState(); } 
+
+    function applyTheme() {
+        document.body.classList.toggle('dark-mode', state.darkMode);
+        
+        elements.themeToggle.innerHTML = ''; 
+        const iconImg = document.createElement('img');
+        iconImg.src = state.darkMode ? 'sun.svg' : 'moon.svg';
+        iconImg.alt = state.darkMode ? '切换到浅色模式' : '切换到深色模式';
+        elements.themeToggle.appendChild(iconImg);
+
+        [elements.totalNumbers, elements.generatedCount, elements.remainingCount, elements.selectedCount].forEach(el => { if(el) el.style.color = state.darkMode ? 'var(--on-surface)' : 'var(--on-background)'; });
+        if (elements.selectionInfoDisplay) elements.selectionInfoDisplay.style.color = state.darkMode ? 'var(--on-surface)' : 'var(--primary)';
+        updateNumberPoolColorGuideText();
+    }
+
+    function saveState() { 
+        localStorage.setItem('randomNumberGeneratorStateV5', JSON.stringify({
+            minValue: state.minValue, maxValue: state.maxValue, count: state.count, generatedNumbers: state.generatedNumbers,
+            selectedNumbers: Array.from(state.selectedNumbers), history: state.history, darkMode: state.darkMode,
+            lastGenerated: state.lastGenerated, historyIndex: state.historyIndex, animationEnabled: state.animationEnabled
+        }));
+    }
+
+    function loadState() { 
+        const saved = localStorage.getItem('randomNumberGeneratorStateV5');
+        if (saved) {
+            try {
+                const ps = JSON.parse(saved);
+                state.minValue = ps.minValue !== undefined ? parseInt(ps.minValue) : 1;
+                state.maxValue = ps.maxValue !== undefined ? parseInt(ps.maxValue) : 100;
+                state.count = ps.count !== undefined ? parseInt(ps.count) : 5;
+                state.generatedNumbers = Array.isArray(ps.generatedNumbers) ? ps.generatedNumbers : [];
+                state.selectedNumbers = new Set(Array.isArray(ps.selectedNumbers) ? ps.selectedNumbers : []);
+                state.history = Array.isArray(ps.history) ? ps.history : [];
+                state.darkMode = typeof ps.darkMode === 'boolean' ? ps.darkMode : false;
+                state.lastGenerated = Array.isArray(ps.lastGenerated) ? ps.lastGenerated : [];
+                state.historyIndex = typeof ps.historyIndex === 'number' ? ps.historyIndex : 0;
+                state.animationEnabled = typeof ps.animationEnabled === 'boolean' ? ps.animationEnabled : true;
+                elements.minValue.value = state.minValue; elements.maxValue.value = state.maxValue; elements.count.value = state.count;
+            } catch (e) { console.error('Error loading state:', e); localStorage.removeItem('randomNumberGeneratorStateV5');}
+        }
+    }
+    window.addEventListener('DOMContentLoaded', init);
+</script>
+</body>
+</html>
