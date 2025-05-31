@@ -1,12 +1,3 @@
 <resources>
     <string name="app_name">随机数生成器</string>
-    <string name="min_hint">最小值</string>
-    <string name="max_hint">最大值</string>
-    <string name="count_hint">生成数量</string>
-    <string name="generate">生成随机数</string>
-    <string name="view_history">历史记录</string>
-    <string name="navigate_back">返回</string>
-    <string name="generated_numbers">已生成数字</string>
-    <string name="available_numbers">可用数字</string>
-    <string name="refresh">刷新列表</string>
 </resources>

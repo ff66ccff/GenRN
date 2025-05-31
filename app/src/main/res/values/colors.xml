@@ -1,6 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <!-- 原有颜色 -->
     <color name="purple_200">#FFBB86FC</color>
     <color name="purple_500">#FF6200EE</color>
     <color name="purple_700">#FF3700B3</color>
@@ -8,20 +7,4 @@
     <color name="teal_700">#FF018786</color>
     <color name="black">#FF000000</color>
     <color name="white">#FFFFFFFF</color>
-    <color name="selected_background">#40C8C8C8</color>
-
-    <!-- Material 3 主题颜色 -->
-    <color name="primary">#6750A4</color>
-    <color name="onPrimary">#FFFFFF</color>
-    <color name="primaryContainer">#EADDFF</color>
-    <color name="onPrimaryContainer">#21005D</color>
-    <color name="secondary">#625B71</color>
-    <color name="onSecondary">#FFFFFF</color>
-    <color name="secondaryContainer">#E8DEF8</color>
-    <color name="onSecondaryContainer">#1D192B</color>
-    <color name="background">#FFFFFF</color>
-    <color name="surface">#FFFFFF</color>
-    <color name="onSurface">#1D1B20</color>
-    <color name="error">#B3261E</color>
-    <color name="onError">#FFFFFF</color>
 </resources>
