@@ -61,7 +61,7 @@ GenRN是一款专为Android设计的随机数生成器应用，采用Material De
 ## 技术栈
 
 - **开发环境**：Android Studio
-- **核心语言**：Kotlin
+- **核心语言**：Kotlin&HTML
 - **设计语言**：Material Design 3
 - **架构模式**：MVVM (Model-View-ViewModel)
 - **存储**：本地数据持久化
